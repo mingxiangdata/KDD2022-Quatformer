@@ -24,7 +24,7 @@ class Model(nn.Module):
         self.output_attention = configs.output_attention
         self.trend_norm_enc = TrendNorm(configs.d_model, self.seq_len, kernel_size=configs.moving_avg)
         self.trend_norm_dec = TrendNorm(configs.d_model, self.label_len + self.pred_len, kernel_size=configs.moving_avg)
-        self.device = torch.device('cuda:{}'.format(configs.gpu))
+        self.device = torch.device(f'cuda:{configs.gpu}')
 
         Attention = QuaternionAttention
 
@@ -45,31 +45,65 @@ class Model(nn.Module):
             [
                 EncoderLayer(
                     LearningToRotateAttentionLayer(
-                        Attention(self.seq_len, self.seq_len, False, attention_dropout=configs.dropout,
-                                        output_attention=configs.output_attention),
-                        self.seq_len, self.seq_len, configs.d_model, configs.n_heads, period_type=configs.period_type, n_periods=configs.n_periods),
-                    d_model = configs.d_model,
-                    seq_len = self.seq_len,
-                    d_ff = configs.d_ff,
+                        Attention(
+                            self.seq_len,
+                            self.seq_len,
+                            False,
+                            attention_dropout=configs.dropout,
+                            output_attention=configs.output_attention,
+                        ),
+                        self.seq_len,
+                        self.seq_len,
+                        configs.d_model,
+                        configs.n_heads,
+                        period_type=configs.period_type,
+                        n_periods=configs.n_periods,
+                    ),
+                    d_model=configs.d_model,
+                    seq_len=self.seq_len,
+                    d_ff=configs.d_ff,
                     moving_avg=configs.moving_avg,
                     dropout=configs.dropout,
-                    activation=configs.activation
-                ) for l in range(configs.e_layers)
-            ],
-            # norm_layer=my_Layernorm(configs.d_model)
+                    activation=configs.activation,
+                )
+                for _ in range(configs.e_layers)
+            ]
         )
+
         # Decoder
         self.decoder = Decoder(
             [
                 DecoderLayer(
                     LearningToRotateAttentionLayer(
-                        Attention(self.label_len + self.pred_len, self.label_len + self.pred_len, False, attention_dropout=configs.dropout,
-                                        output_attention=False),
-                        self.label_len + self.pred_len, self.label_len + self.pred_len, configs.d_model, configs.n_heads, period_type=configs.period_type, n_periods=configs.n_periods),
+                        Attention(
+                            self.label_len + self.pred_len,
+                            self.label_len + self.pred_len,
+                            False,
+                            attention_dropout=configs.dropout,
+                            output_attention=False,
+                        ),
+                        self.label_len + self.pred_len,
+                        self.label_len + self.pred_len,
+                        configs.d_model,
+                        configs.n_heads,
+                        period_type=configs.period_type,
+                        n_periods=configs.n_periods,
+                    ),
                     LearningToRotateAttentionLayer(
-                        Attention(self.label_len + self.pred_len, self.seq_len, False, attention_dropout=configs.dropout,
-                                        output_attention=False),
-                        self.label_len + self.pred_len, self.seq_len, configs.d_model, configs.n_heads, period_type=configs.period_type, n_periods=configs.n_periods),
+                        Attention(
+                            self.label_len + self.pred_len,
+                            self.seq_len,
+                            False,
+                            attention_dropout=configs.dropout,
+                            output_attention=False,
+                        ),
+                        self.label_len + self.pred_len,
+                        self.seq_len,
+                        configs.d_model,
+                        configs.n_heads,
+                        period_type=configs.period_type,
+                        n_periods=configs.n_periods,
+                    ),
                     configs.d_model,
                     configs.c_out,
                     self.label_len + self.pred_len,
@@ -78,16 +112,14 @@ class Model(nn.Module):
                     dropout=configs.dropout,
                     activation=configs.activation,
                 )
-                for l in range(configs.d_layers)
+                for _ in range(configs.d_layers)
             ],
-            # norm_layer=my_Layernorm(configs.d_model),
             projection=nn.Linear(configs.d_model, configs.c_out, bias=True),
-            # trend_projection=nn.Linear(configs.d_model, configs.c_out, bias=True)
         )
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec,
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None, is_training=False):
-        
+
         mean = torch.mean(x_enc, dim=1).unsqueeze(1).repeat(1, self.pred_len, 1)
         zeros = torch.zeros([x_dec.shape[0], self.pred_len, x_dec.shape[2]]).to(self.device)
 
@@ -122,7 +154,7 @@ class Model(nn.Module):
         regularization_loss = self.lambda_1 * omegas_loss + self.lambda_2 * thetas_loss
         # regularization_loss = omegas_loss + thetas_loss
         # regularization_loss = torch.tensor(0.).to(self.device)
-        
+
         # output shape: [B, L, D]
         if self.output_attention:
             return dec_out[:, -self.pred_len:, :], attns, regularization_loss

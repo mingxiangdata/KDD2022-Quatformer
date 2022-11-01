@@ -17,7 +17,7 @@ class Dataset_ETT_hour(Dataset):
                  target='OT', scale=True, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
         # info
-        if size == None:
+        if size is None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
@@ -50,7 +50,7 @@ class Dataset_ETT_hour(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
-        if self.features == 'M' or self.features == 'MS':
+        if self.features in ['M', 'MS']:
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features == 'S':
@@ -105,7 +105,7 @@ class Dataset_ETT_minute(Dataset):
                  target='OT', scale=True, timeenc=0, freq='t'):
         # size [seq_len, label_len, pred_len]
         # info
-        if size == None:
+        if size is None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
@@ -138,7 +138,7 @@ class Dataset_ETT_minute(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
-        if self.features == 'M' or self.features == 'MS':
+        if self.features in ['M', 'MS']:
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features == 'S':
@@ -195,7 +195,7 @@ class Dataset_Custom(Dataset):
                  target='OT', scale=True, timeenc=0, freq='h'):
         # size [seq_len, label_len, pred_len]
         # info
-        if size == None:
+        if size is None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
@@ -239,7 +239,7 @@ class Dataset_Custom(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
-        if self.features == 'M' or self.features == 'MS':
+        if self.features in ['M', 'MS']:
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features == 'S':
@@ -294,7 +294,7 @@ class Dataset_Pred(Dataset):
                  target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
-        if size == None:
+        if size is None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
@@ -334,7 +334,7 @@ class Dataset_Pred(Dataset):
         border1 = len(df_raw) - self.seq_len
         border2 = len(df_raw)
 
-        if self.features == 'M' or self.features == 'MS':
+        if self.features in ['M', 'MS']:
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features == 'S':
