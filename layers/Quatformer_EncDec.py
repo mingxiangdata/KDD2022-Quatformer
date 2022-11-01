@@ -48,7 +48,7 @@ class TrendNorm(nn.Module):
         super(TrendNorm, self).__init__()
         if affine:
             self.gamma = nn.Parameter(torch.ones(dimension,))
-            self.register_buffer(f'position', torch.arange(0.0, seq_len, 1.0) / seq_len)
+            self.register_buffer('position', torch.arange(0.0, seq_len, 1.0) / seq_len)
             self.betas = nn.ParameterList([nn.Parameter(torch.zeros(dimension,)) for _ in range(order+1)])
         self.detrend = series_decomp(kernel_size)
         self.eps = eps
@@ -119,19 +119,15 @@ class Encoder(nn.Module):
                 x, attn, omegas_penalty, thetas_penalty = attn_layer(x, attn_mask=attn_mask)
                 x = conv_layer(x)
                 attns.append(attn)
-                omegas_penalties.append(omegas_penalty)
-                omegas_penalties.append(thetas_penalty)
+                omegas_penalties.extend((omegas_penalty, thetas_penalty))
             x, attn, omegas_penalty, thetas_penalty = self.attn_layers[-1](x)
-            omegas_penalties.append(omegas_penalty)
-            omegas_penalties.append(thetas_penalty)
+            omegas_penalties.extend((omegas_penalty, thetas_penalty))
             attns.append(attn)
         else:
             for attn_layer in self.attn_layers:
                 x, attn, omegas_penalty, thetas_penalty  = attn_layer(x, attn_mask=attn_mask, is_training=False)
                 attns.append(attn)
-                omegas_penalties.append(omegas_penalty)
-                omegas_penalties.append(thetas_penalty)
-
+                omegas_penalties.extend((omegas_penalty, thetas_penalty))
         if self.norm is not None:
             x = self.norm(x)
 

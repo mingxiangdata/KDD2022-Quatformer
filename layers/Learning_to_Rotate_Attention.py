@@ -35,13 +35,13 @@ class QuaternionAttention(nn.Module):
         # a quaternion version
         Q_angles = query_omegas * self.query_pos + query_thetas # (B, L, H, M)
         K_angles = key_omegas * self.key_pos + key_thetas # (B, S, H, M)
-        
+
         Q_cos, Q_sin = Q_angles.cos(), Q_angles.sin() # (B, L, H, M)
         K_cos, K_sin = K_angles.cos(), K_angles.sin() # (B, S, H, M)
 
         Q_quaternion = torch.chunk(queries, 4, dim=-1) # (B, L, H, E//4) of 4
         K_quaternion = torch.chunk(keys, 4, dim=-1) # (B, S, H, E//4) of 4
-        
+
         Q_rotation = torch.cat(
             [
                 torch.einsum('blhe,blhm->blhme', Q_quaternion[0], Q_cos) - torch.einsum('blhe,blhm->blhme', Q_quaternion[1], Q_sin),
@@ -59,7 +59,7 @@ class QuaternionAttention(nn.Module):
                 torch.einsum('bshe,bshm->bshme', K_quaternion[3], K_cos) + torch.einsum('bshe,bshm->bshme', K_quaternion[1], K_sin),
             ], dim=-1
         ) # (B, S, H, M, E)
-        
+
         scale = self.scale or 1. / sqrt(E)
 
         scores = torch.einsum("blhme,bshme->bhls", Q_rotation, K_rotation) / M
@@ -73,10 +73,7 @@ class QuaternionAttention(nn.Module):
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
 
-        if self.output_attention:
-            return V.contiguous(), A
-        else:
-            return V.contiguous(), None
+        return (V.contiguous(), A) if self.output_attention else (V.contiguous(), None)
 
 
 class FullAttention(nn.Module):
@@ -103,10 +100,7 @@ class FullAttention(nn.Module):
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
 
-        if self.output_attention:
-            return (V.contiguous(), A)
-        else:
-            return (V.contiguous(), None)
+        return (V.contiguous(), A) if self.output_attention else (V.contiguous(), None)
 
 
 class LearningToRotateAttentionLayer(nn.Module):

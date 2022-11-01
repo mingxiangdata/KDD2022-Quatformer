@@ -82,7 +82,7 @@ parser.add_argument('--lambda_2', type=float, default=0., help='regularization c
 
 args = parser.parse_args()
 
-args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
+args.use_gpu = bool(torch.cuda.is_available() and args.use_gpu)
 
 if args.use_gpu and args.use_multi_gpu:
     args.dvices = args.devices.replace(' ', '')
@@ -99,57 +99,35 @@ if args.is_training:
     MSEs, MAEs = [], []
     for ii in range(args.itr):
         # setting record of experiments
-        setting = '{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_eb{}_{}_{}'.format(
-            args.model_id,
-            args.model,
-            args.data,
-            args.features,
-            args.seq_len,
-            args.label_len,
-            args.pred_len,
-            args.d_model,
-            args.n_heads,
-            args.e_layers,
-            args.d_layers,
-            args.d_ff,
-            args.embed,
-            args.des, ii)
+        setting = f'{args.model_id}_{args.model}_{args.data}_ft{args.features}_sl{args.seq_len}_ll{args.label_len}_pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_eb{args.embed}_{args.des}_{ii}'
+
 
         exp = Exp(args)  # set experiments
-        print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        print(f'>>>>>>>start training : {setting}>>>>>>>>>>>>>>>>>>>>>>>>>>')
         exp.train(setting)
 
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+        print(f'>>>>>>>testing : {setting}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         mse, mae = exp.test(setting)
         MSEs.append(mse)
         MAEs.append(mae)
 
         if args.do_predict:
-            print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            print(f'>>>>>>>predicting : {setting}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
             exp.predict(setting, True)
 
         torch.cuda.empty_cache()
 
-    print('The average MSE is {}, and the average MAE is {}.'.format(np.mean(MSEs), np.mean(MAEs)))
+    print(
+        f'The average MSE is {np.mean(MSEs)}, and the average MAE is {np.mean(MAEs)}.'
+    )
+
 
 else:
     ii = 0
-    setting = '{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_eb{}_{}_{}'.format(args.model_id,
-                                                                                                  args.model,
-                                                                                                  args.data,
-                                                                                                  args.features,
-                                                                                                  args.seq_len,
-                                                                                                  args.label_len,
-                                                                                                  args.pred_len,
-                                                                                                  args.d_model,
-                                                                                                  args.n_heads,
-                                                                                                  args.e_layers,
-                                                                                                  args.d_layers,
-                                                                                                  args.d_ff,
-                                                                                                  args.embed,
-                                                                                                  args.des, ii)
+    setting = f'{args.model_id}_{args.model}_{args.data}_ft{args.features}_sl{args.seq_len}_ll{args.label_len}_pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_eb{args.embed}_{args.des}_{ii}'
+
 
     exp = Exp(args)  # set experiments
-    print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+    print(f'>>>>>>>testing : {setting}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     exp.test(setting, test=1)
     torch.cuda.empty_cache()
